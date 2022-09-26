@@ -5,7 +5,8 @@ services:
     volumes:
       - ./nginx/default.conf:/tmp/default.conf
     environment: 
-      - FLASK_SERVER_ADDR=flask-app:8000
+      # - FLASK_SERVER_ADDR=flask-app:8000 # enable this and disable below to bypass mitm-proxy
+      - FLASK_SERVER_ADDR=mitm-proxy-web:8000
     ports:
       - "80:80"
     depends_on:
@@ -16,6 +17,21 @@ services:
       timeout: 10s
       retries: 3
     command: /app/start.sh
+  mitm-proxy-web:
+    image: mitmproxy/mitmproxy:7.0.4
+    volumes:
+      - ./mitm-proxy:/data
+    ports:
+      - "8081:8081"
+    command:
+      - mitmweb 
+      - --web-host 
+      - 0.0.0.0
+      - -p
+      - "8000"
+      - -w
+      - /data/mitm-proxy.log
+      - --mode=reverse:http://flask-app:8000
   flask-app:
     build: flask
     restart: always
